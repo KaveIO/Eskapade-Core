@@ -201,10 +201,8 @@ modification, are permitted according to the terms listed in the file
 LICENSE.
 \"\"\"
 
-from escore import process_manager, Chain, ConfigObject
+from escore import process_manager, Chain, ConfigObject, core_ops
 from escore.logger import Logger, LogLevel
-
-from links import {link_name!s}
 
 logger = Logger()
 
@@ -219,7 +217,7 @@ settings['version'] = 0
 # --- now set up the chains and links
 
 ch = Chain('Start')
-link = {link_name!s}()
+link = core_ops.{link_name!s}()
 link.logger.log_level = LogLevel.DEBUG
 ch.add(link)
 
