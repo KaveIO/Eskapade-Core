@@ -21,7 +21,7 @@ from setuptools import setup
 NAME = 'Eskapade-Core'
 
 MAJOR = 0
-REVISION = 1
+REVISION = 9
 PATCH = 0
 DEV = False
 
