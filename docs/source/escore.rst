@@ -29,14 +29,6 @@ escore.exceptions module
     :undoc-members:
     :show-inheritance:
 
-escore.helpers module
----------------------
-
-.. automodule:: escore.helpers
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 escore.resources module
 -----------------------
 
