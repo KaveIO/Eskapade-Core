@@ -253,7 +253,7 @@ def generate_notebook(notebook_dir, notebook_name, macro_path=None):
     if macro_path:
         macro_path = "'{path}'".format(path=macro_path)
     else:
-        macro_path = "resources.tutorial('esk101_helloworld.py')"
+        macro_path = "resources.tutorial('esk103_printdatastore.py')"
 
     with open(resources.template('notebook_template.ipynb')) as file:
         template = file.read()
