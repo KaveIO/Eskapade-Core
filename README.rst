@@ -89,11 +89,11 @@ E.g. you can now run:
   $ eskapade_run $TUTDIRC/esk101_helloworld.py
 
 
-For examples on using Eskapade links, chains and the DataStore to set up an analysis work flow,
-please see the `tutorials section <http://eskapade-core.readthedocs.io/en/latest/tutorials.html>`_.
-This documentation is minimal on purpose.
+This documentation here is minimal on purpose.
+For all examples on using Eskapade links, chains and the DataStore to set up an analysis work flow,
+please see the `Eskapade tutorials section <http://eskapade.readthedocs.io/en/latest/tutorials.html>`_.
 
-For many more examples, see the `full Eskapade documentation <http://eskapade.readthedocs.io>`_.
+For more examples, see the `full Eskapade documentation <http://eskapade.readthedocs.io>`_.
 
 
 Contact and support
