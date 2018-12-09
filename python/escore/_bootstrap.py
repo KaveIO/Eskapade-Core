@@ -394,6 +394,7 @@ def generate_entry_points(python_dir: str, package_name: str) -> None:
     """
     # Do not modify the indentation of template!
     template = """# Entry points for {package_name}
+# See setup.py for defined entry_point scripts
 # Created by Eskapade on {date}
 
 from escore.logger import LogLevel, Logger, global_log_publisher, ConsoleHandler, ConsoleErrHandler
@@ -516,6 +517,7 @@ def setup_package() -> None:
           # The Windows scripts will auto-magically get a .exe extension.
           # {package_name}_run:   example main application of package.
           # {package_name}_trial: test application to let loose on tests. This is just a wrapper around pytest.
+          # See: entry_points.py for run() and trail() functions. cmd line args are passed on.
           entry_points=dict(
               console_scripts = [
                   '{package_name}_run = {package_name}.entry_points:run',
