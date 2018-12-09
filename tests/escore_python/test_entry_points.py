@@ -5,6 +5,9 @@ from pytest import raises
 from escore import entry_points
 from escore.entry_points import eskapade_bootstrap
 
+from escore.logger import Logger
+logger = Logger()
+
 
 def test_bootstrap_args():
     """Test eskapade_bootstrap arguments handling."""
@@ -23,6 +26,10 @@ def test_bootstrap_args():
         sys.argv[1:] = ['eskapade']
         eskapade_bootstrap()
     # use of Eskapade reserved name
+    with raises(AttributeError, match='escore is reserved by Eskapade'):
+        sys.argv[1:] = ['escore']
+        eskapade_bootstrap()
+    # use of Eskapade reserved name
     with raises(AttributeError, match='Link is reserved by Eskapade'):
         sys.argv[1:] = ['package', '-l', 'Link']
         eskapade_bootstrap()
@@ -38,9 +45,26 @@ def assert_structure(local_path, package_name, link_name, macro_name, notebook_n
     assert package_dir.check()
     assert package_dir.join('setup.py').check()
 
-    expected_package_paths = ['links', 'links/__init__.py', 'links/{}.py'.format(link_name.lower()),
-                              '__init__.py', '{}.py'.format(macro_name), '{}.ipynb'.format(notebook_name)]
+    expected_package_paths = ['notebooks',
+                              'notebooks/{0}.ipynb'.format(notebook_name),
+                              '{0}'.format(package_name),
+                              '{0}/links'.format(package_name),
+                              '{0}/links/__init__.py'.format(package_name),
+                              '{0}/links/{1}.py'.format(package_name, link_name.lower()),
+                              '{0}/macros/__init__.py'.format(package_name),
+                              '{0}/macros/{1}.py'.format(package_name, macro_name),
+                              '{0}/__init__.py'.format(package_name),
+                              '{0}/config'.format(package_name),
+                              '{0}/macros'.format(package_name),
+                              '{0}/resources.py'.format(package_name),
+                              'tests',
+                              'tests/test_{0}.py'.format(package_name),
+                              'data',
+                              'setup.py'
+    ]
     package_paths = [package_dir.bestrelpath(path) for path in package_dir.visit()]
+
+    logger.error(str(package_paths))
     assert len(set(expected_package_paths).difference(set(package_paths))) == 0
 
 

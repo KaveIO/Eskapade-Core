@@ -36,15 +36,69 @@ def set_matplotlib_backend(backend=None, batch=None, silent=True):
     """
     try:
         # HACK it's very useful to call this function in the configuration of eskapade,
-        # but it's located in eskapade visualization library.
-        # this way escore is independent of matplotlib
-        # when eskapade is installed, escore is also installed, so this will work.
-        # I'm not too happy with this, but will do for now. Think of something better if possible.
-        from eskapade.visualization import config
-        config.set_matplotlib_backend(backend, batch, silent)
+        # but we don't require matplotlib to be installed
+        import matplotlib
     except (ModuleNotFoundError, AttributeError):
-        # eskapade library not found, so nothing to configure
-        pass
+        # matplotlib library not found, so anyhow nothing to configure
+        return
+
+    from escore import process_manager, ConfigObject
+    settings = process_manager.service(ConfigObject)
+
+    # determine if we think batch mode is required
+    run_interactive = check_interactive_backend()
+
+    # priority: 1) function arg, 2) settings, 3) check_interactive_backend()
+    if (batch is not None) and isinstance(batch, bool): 
+        run_batch = batch
+    elif 'batchMode' in settings:
+        # batchMode in settings is initialized to: not check_interactive_backend(),
+        # but may be overwritten by user
+        run_batch = settings.get('batchMode')
+    else:
+        run_batch = not run_interactive
+
+    # check if interactive mode actually can be used, if it is requested
+    if (not run_batch) and (not run_interactive):
+        if not silent:
+            raise RuntimeError('Interactive Matplotlib mode requested, but no display found.')
+        logger.warning('Matplotlib cannot be used interactively; no display found.')
+
+    if run_batch:
+        matplotlib.interactive(False)
+
+    # get Matplotlib backends
+    curr_backend = matplotlib.get_backend().lower()
+    ni_backends = [nib.lower() for nib in matplotlib.rcsetup.non_interactive_bk]
+
+    # determine backend to be set
+    if not backend:
+        # try to use current backend
+        backend = curr_backend if not run_batch or curr_backend in ni_backends else ni_backends[0]
+    backend = str(backend).lower()
+
+    # check if backend is compatible with mode
+    if run_batch and backend not in ni_backends:
+        if not silent:
+            raise RuntimeError('Non-interactive Matplotlib backend required, but "{!s}" requested.'.format(backend))
+        logger.warning(
+            'Set Matplotlib backend to "{0:s}"; non-interactive backend required, but "{1:s}" requested.'.format(ni_backends[0], backend))
+        backend = ni_backends[0]
+
+    # check if backend has to change
+    if backend == curr_backend:
+        return
+
+    # check if backend can still be set
+    if 'matplotlib.pyplot' in sys.modules:
+        if not silent:
+            raise RuntimeError('Cannot set Matplotlib backend: pyplot module already loaded.')
+        else:
+            logger.warning('Cannot set Matplotlib backend: pyplot module already loaded.')
+        return
+
+    # set backend
+    matplotlib.use(backend)
 
 
 def get_env_var(key):
