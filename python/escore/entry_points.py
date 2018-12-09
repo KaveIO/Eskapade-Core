@@ -208,18 +208,38 @@ def eskapade_bootstrap():
         raise AttributeError('Link is reserved by Eskapade. Please, choose different name for the link.')
     if args.package_name.lower() == 'eskapade':
         raise AttributeError('eskapade is reserved by Eskapade. Please, choose different name for the project.')
+    if args.package_name.lower() == 'escore':
+        raise AttributeError('escore is reserved by Eskapade. Please, choose different name for the project.')
     if not args.project_root_dir:
         raise AttributeError('Expected the value after --project_root_dir.')
 
-    package_dir = bootstrap.get_absolute_path(args.project_root_dir) + '/' + args.package_name
-    link_dir = package_dir + '/links'
-    marco_path = package_dir + '/' + args.macro_name + '.py'
+    package_dir  = bootstrap.get_absolute_path(args.project_root_dir) + '/' + args.package_name
+    python_dir   = package_dir + '/' + args.package_name
+    link_dir     = python_dir  + '/links'
+    macro_dir    = python_dir  + '/macros'
+    data_dir     = package_dir + '/data'
+    notebook_dir = package_dir + '/notebooks'
+    test_dir     = package_dir + '/tests'
+    marco_path   = macro_dir + '/' + args.macro_name + '.py'
 
     # create the directories
+    bootstrap.generate_python_dir(root_dir=package_dir, package_name=args.package_name)
+    bootstrap.generate_configs(root_dir=python_dir)
     bootstrap.create_dir(link_dir)
+    bootstrap.create_dir(macro_dir, is_create_init=True)
+    bootstrap.create_dir(data_dir)
+    bootstrap.create_dir(notebook_dir)
+    bootstrap.create_dir(test_dir)
+
+    # create macro, link, notebook
     bootstrap.generate_link(link_dir=link_dir, link_name=args.link_name, is_create_init=True)
-    bootstrap.generate_macro(macro_dir=package_dir, macro_name=args.macro_name,
-                             link_module=args.package_name, link_name=args.link_name, is_create_init=True)
-    bootstrap.generate_notebook(notebook_dir=package_dir, notebook_name=args.notebook_name, macro_path=marco_path)
-    bootstrap.generate_configs(root_dir=package_dir)
+    bootstrap.generate_macro(macro_dir=macro_dir, macro_name=args.macro_name,
+                             link_module='{0:s}.links'.format(args.package_name), link_name=args.link_name,
+                             is_create_init=True, import_line='import {0:s}.links'.format(args.package_name))
+    bootstrap.generate_notebook(notebook_dir=notebook_dir, notebook_name=args.notebook_name, macro_path=marco_path)
+    bootstrap.generate_resources(python_dir, args.package_name)
+    bootstrap.generate_test(test_dir=test_dir, package_name=args.package_name)
+
+    # generate package configuration
     bootstrap.generate_setup(root_dir=package_dir, package_name=args.package_name)
+    bootstrap.generate_test(test_dir=test_dir, package_name=args.package_name)
