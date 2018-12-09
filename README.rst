@@ -2,7 +2,7 @@
 Eskapade-Core
 =============
 
-* Version: 0.9.1
+* Version: 0.9.2
 * Released: Dec 2018
 
 Eskapade is a light-weight, python-based data analysis framework, meant for modularizing all sorts of data analysis problems
