@@ -318,9 +318,11 @@ def generate_resources(python_dir: str, package_name: str) -> None:
     """Generate project resources.py.
 
     :param python_dir: absolute path to an analysis project python dir
+    :param package_name: package name
     """
     # Do not modify the indentation of template!
-    template = """\"\"\"Resources lookup file for {package_name}\"\"\"
+    template = """# Resources lookup file for {package_name}
+# Created by Eskapade on {date}
 
 import pathlib
 import sys
@@ -380,8 +382,58 @@ def config(name: str) -> str:
 """
     resource_type_str = '{resource_type}'
     name_str = '"{name!s}"'
-    content = template.format(package_name=package_name, resource_type_str=resource_type_str, name_str=name_str)
+    content = template.format(package_name=package_name, resource_type_str=resource_type_str, name_str=name_str, date=datetime.date.today())
     create_file(path=python_dir, file_name='resources.py', content=content)
+
+
+def generate_entry_points(python_dir: str, package_name: str) -> None:
+    """Generate project's entry_points.py.
+
+    :param python_dir: absolute path to an analysis project python dir
+    :param package_name: package name
+    """
+    # Do not modify the indentation of template!
+    template = """# Entry points for {package_name}
+# Created by Eskapade on {date}
+
+from escore.logger import LogLevel, Logger, global_log_publisher, ConsoleHandler, ConsoleErrHandler
+
+publisher = global_log_publisher
+publisher.log_level = LogLevel.INFO
+publisher.add_handler(ConsoleHandler())
+publisher.add_handler(ConsoleErrHandler())
+
+logger = Logger(__name__)
+
+
+def trial():
+    \"\"\"Run {package_name} tests.
+
+    This function is just a wrapper around pytest.
+    Will keep this here until fully switched to pytest or nose and tox.
+    \"\"\"
+    import sys
+    import pytest
+
+    # ['--pylint'] +
+    # -r xs shows extra info on skips and xfails.
+    default_options = ['-rxs']
+    args = sys.argv[1:] + default_options
+    sys.exit(pytest.main(args))
+
+
+def run():
+    \"\"\"Run {package_name} program.
+    \"\"\"
+    import argparse
+    parser = argparse.ArgumentParser('{package_name}_run',
+                                     description='Run entry point for {package_name}.')
+    args = parser.parse_args()
+
+    logger.info('Welcome to {package_name}!')
+"""
+    content = template.format(package_name=package_name, date=datetime.date.today())
+    create_file(path=python_dir, file_name='entry_points.py', content=content)
 
 
 def generate_setup(root_dir: str, package_name: str) -> None:
@@ -460,7 +512,17 @@ def setup_package() -> None:
           install_requires=REQUIREMENTS,
           tests_require=TEST_REQUIREMENTS,
           package_data=dict({package_name}=[\'config/*\']),
+          # The following 'creates' executable scripts for *nix and Windows.
+          # The Windows scripts will auto-magically get a .exe extension.
+          # {package_name}_run:   example main application of package.
+          # {package_name}_trial: test application to let loose on tests. This is just a wrapper around pytest.
+          entry_points=dict(
+              console_scripts = [
+                  '{package_name}_run = {package_name}.entry_points:run',
+                  '{package_name}_trial = {package_name}.entry_points:trial'
+              ]
           )
+    )
 
 
 if __name__ == '__main__':

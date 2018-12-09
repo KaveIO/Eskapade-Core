@@ -57,6 +57,7 @@ def assert_structure(local_path, package_name, link_name, macro_name, notebook_n
                               '{0}/config'.format(package_name),
                               '{0}/macros'.format(package_name),
                               '{0}/resources.py'.format(package_name),
+                              '{0}/entry_points.py'.format(package_name),
                               'tests',
                               'tests/test_{0}.py'.format(package_name),
                               'data',

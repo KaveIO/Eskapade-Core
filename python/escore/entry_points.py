@@ -243,3 +243,4 @@ def eskapade_bootstrap():
     # generate package configuration
     bootstrap.generate_setup(root_dir=package_dir, package_name=args.package_name)
     bootstrap.generate_test(test_dir=test_dir, package_name=args.package_name)
+    bootstrap.generate_entry_points(python_dir=python_dir, package_name=args.package_name)
