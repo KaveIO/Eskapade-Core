@@ -2,7 +2,7 @@
 Eskapade-Core
 =============
 
-* Version: 0.9.2
+* Version: 0.9.3
 * Released: Dec 2018
 
 Eskapade is a light-weight, python-based data analysis framework, meant for modularizing all sorts of data analysis problems
@@ -19,6 +19,13 @@ For the minimal documentation on Eskapade-Core, please go `here <http://eskapade
 
 Release notes
 =============
+
+Version 0.9.3
+-------------
+
+In Eskapade-Core v0.9.3 the eskapade_bootstrap method has been severely upgraded.
+Running this command will generate you a new (Eskapade) project directory with 
+a working link, macro, tests, entry-point scripts, and setup.py file!
 
 Version 0.9
 -----------

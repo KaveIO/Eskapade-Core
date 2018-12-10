@@ -390,11 +390,17 @@ import {package_name}
 # macros that are shipped with {package_name}.
 _MACROS = dict((_.name, _) for _ in pathlib.Path(resource_filename({package_name}.__name__, 'macros')).glob('*.py'))
 
+# notebooks that are shipped with {package_name}.
+_NOTEBOOKS = dict((_.name, _) for _ in pathlib.Path(resource_filename({package_name}.__name__, 'notebooks')).glob('*.ipynb'))
+
 # configuration files that are shipped with {package_name}.
 _CONFIGS = dict((_.name, _) for _ in pathlib.Path(resource_filename({package_name}.__name__, 'config')).glob('*'))
 
+# data files that are shipped with {package_name}.
+_DATA = dict((_.name, _) for _ in pathlib.Path(resource_filename({package_name}.__name__, 'data')).glob('*'))
+
 # Resource types
-_RESOURCES = dict(macro=_MACROS, config=_CONFIGS)
+_RESOURCES = dict(macro=_MACROS, config=_CONFIGS, notebook=_NOTEBOOKS, data=_DATA)
 
 
 def _resource(resource_type, name: str) -> str:
@@ -416,7 +422,7 @@ def _resource(resource_type, name: str) -> str:
 
 
 def macro(name: str) -> str:
-    \"\"\"Return the full path filename of a macro.
+    \"\"\"Return the full path filename of a shipped macro.
 
     :param str name: The name of the macro.
     :returns: The full path filename of the macro.
@@ -426,8 +432,30 @@ def macro(name: str) -> str:
     return _resource('macro', name)
 
 
+def notebook(name: str) -> str:
+    \"\"\"Return the full path filename of a shipped notebook.
+
+    :param str name: The name of the notebook.
+    :returns: The full path filename of the notebook.
+    :rtype: str
+    :raises FileNotFoundError: If the notebook cannot be found.
+    \"\"\"
+    return _resource('notebook', name)
+
+
+def data(name: str) -> str:
+    \"\"\"Return the full path filename of a shipped data file.
+
+    :param str name: The name of the data.
+    :returns: The full path filename of the data.
+    :rtype: str
+    :raises FileNotFoundError: If the data cannot be found.
+    \"\"\"
+    return _resource('data', name)
+
+
 def config(name: str) -> str:
-    \"\"\"Return the full path filename of a config file.
+    \"\"\"Return the full path filename of a shipped config file.
 
     :param str name: The name of the config.
     :returns: The full path filename of the config.
@@ -576,7 +604,9 @@ def setup_package() -> None:
           packages=find_packages(),
           install_requires=REQUIREMENTS,
           tests_require=TEST_REQUIREMENTS,
-          package_data=dict({package_name}=[\'config/*\']),
+          # files to be shipped with the installation, under: {package_name}/{package_name}/
+          # after installation, these can be found with the functions in resources.py
+          package_data=dict({package_name}=[\'config/*\', \'notebooks/*.ipynb\', \'data/*\']),
           # The following 'creates' executable scripts for *nix and Windows.
           # The Windows scripts will auto-magically get a .exe extension.
           # {package_name}_run:   example main application of package.
