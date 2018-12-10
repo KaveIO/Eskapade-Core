@@ -559,7 +559,7 @@ TEST_REQUIREMENTS = ['pytest>=3.5.0',
                      'pytest-pylint>=0.9.0',
                      ]
 REQUIREMENTS = [
-    'Eskapade-Core>=0.9.0'
+    'Eskapade-Core>=0.9.3'
     ]
 
 REQUIREMENTS = REQUIREMENTS + TEST_REQUIREMENTS
