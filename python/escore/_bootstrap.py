@@ -179,23 +179,79 @@ class {link_name!s}(Link):
                     .format(link_dir=link_dir, file_name=file_name, link_name=link_name, import_line=import_line))
 
 
-def generate_test(test_dir: str, package_name: str) -> None:
+def generate_tests(test_dir: str, package_name: str) -> None:
     """Generate a default test file for new package
 
     :param test_dir: absolute path to a tests directory
     :param package_name: name of the package
     """
-    # Do not modify the indentation of template!
-    template = """\"\"\"File with tests of {package_name} package.\"\"\"
+    python_dir = test_dir + '/' + package_name.lower() + '_python'
+    create_dir(path=python_dir, is_create_init=True)
+    integration_dir = test_dir + '/' + package_name.lower() + '_python/integration'
+    create_dir(path=integration_dir, is_create_init=True)
 
-def test_{package_name}():
+    # 1. setup file
+    # Do not modify the indentation of template!
+    from setuptools import setup
+    template = """# Setup file for tests of {package_name} package.
+
+NAME = '{package_name}_python'
+
+def setup_package() -> None:
+    \"\"\"
+    The main setup method. It is responsible for setting up and installing the package.
+    \"\"\"
+    setup(name=NAME,
+          license='',
+          description='{package_name} test package',
+          python_requires='>=3.6',
+          packages=['{package_name}_python'],
+          install_requires=[]
+    )
+
+if __name__ == '__main__':
+    setup_package()
+"""
+    content = template.format(package_name=package_name.lower())
+    create_file(path=test_dir, file_name='setup.py', content=content)
+
+    # 2. unit tests file
+    # Do not modify the indentation of template!
+    template = """# File with unit tests of {package_name} package.
+
+def test_import_{package_name}():
     import {package_name}
 """
-    content = template.format(package_name=package_name)
+    content = template.format(package_name=package_name.lower())
     file_name = package_name.lower()
-
-    create_file(path=test_dir,
+    create_file(path=python_dir,
                 file_name='test_{file_name!s}.py'.format(file_name=file_name), content=content)
+
+    # 3. integration tests file
+    # Do not modify the indentation of template!
+    template = """# File with integration tests of {package_name} package.
+
+import os
+import unittest
+import unittest.mock as mock
+
+from escore import process_manager, resources, ConfigObject, DataStore, StatusCode
+from escore.bases import TutorialMacrosTest
+
+from {package_name} import resources
+
+class MacrosTest(TutorialMacrosTest):
+    \"\"\"Integration tests class for {package_name}\"\"\"
+
+    def test_macro(self):
+        self.eskapade_run(resources.macro('macro.py'))
+
+        ds = process_manager.service(DataStore)
+        self.assertEqual(0, len(ds.keys()))
+"""
+    content = template.format(package_name=package_name.lower())
+    create_file(path=integration_dir,
+                file_name='test_macros.py', content=content)
 
 
 def generate_macro(macro_dir,
@@ -382,7 +438,8 @@ def config(name: str) -> str:
 """
     resource_type_str = '{resource_type}'
     name_str = '"{name!s}"'
-    content = template.format(package_name=package_name, resource_type_str=resource_type_str, name_str=name_str, date=datetime.date.today())
+    content = template.format(package_name=package_name.lower(), resource_type_str=resource_type_str,
+                              name_str=name_str, date=datetime.date.today())
     create_file(path=python_dir, file_name='resources.py', content=content)
 
 
@@ -433,8 +490,20 @@ def run():
 
     logger.info('Welcome to {package_name}!')
 """
-    content = template.format(package_name=package_name, date=datetime.date.today())
+    content = template.format(package_name=package_name.lower(), date=datetime.date.today())
     create_file(path=python_dir, file_name='entry_points.py', content=content)
+
+
+def generate_readme(root_dir: str, package_name: str) -> None:
+    """Generate empty project readme.
+
+    :param root_dir: absolute path to an analysis project root dir
+    :param package_name: package name
+    """
+    # create empty readme
+    line = '=' * len(package_name)
+    readme_str = '{0}\n{1}\n{0}\n\n* Version: {2}\n* Released: {3}\n'.format(line, package_name, '1.0.0.dev', datetime.date.today())
+    create_file(path=root_dir, file_name='README.rst', content=readme_str)
 
 
 def generate_setup(root_dir: str, package_name: str) -> None:
@@ -443,11 +512,6 @@ def generate_setup(root_dir: str, package_name: str) -> None:
     :param root_dir: absolute path to an analysis project root dir
     :param package_name: package name
     """
-    name_str = "name = '{name!s}'"
-    version_str = "version = '{version!s}'"
-    full_version_str = "full_version = '{full_version!s}'"
-    release_str = "release = {is_release!s}"
-
     # Do not modify the indentation of template!
     template = """from setuptools import setup, find_packages
 
@@ -530,6 +594,10 @@ def setup_package() -> None:
 if __name__ == '__main__':
     setup_package()
 """
-    content = template.format(package_name=package_name, name_str=name_str, version_str=version_str,
+    name_str = "name = '{name!s}'"
+    version_str = "version = '{version!s}'"
+    full_version_str = "full_version = '{full_version!s}'"
+    release_str = "release = {is_release!s}"
+    content = template.format(package_name=package_name.lower(), name_str=name_str, version_str=version_str,
                               full_version_str=full_version_str, release_str=release_str)
     create_file(path=root_dir, file_name='setup.py', content=content)

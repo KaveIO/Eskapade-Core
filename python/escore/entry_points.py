@@ -222,7 +222,7 @@ def eskapade_bootstrap():
     test_dir     = package_dir + '/tests'
     marco_path   = macro_dir + '/' + args.macro_name + '.py'
 
-    # create the directories
+    # create the directory structure
     bootstrap.generate_python_dir(root_dir=package_dir, package_name=args.package_name)
     bootstrap.generate_configs(root_dir=python_dir)
     bootstrap.create_dir(link_dir)
@@ -238,9 +238,9 @@ def eskapade_bootstrap():
                              is_create_init=True, import_line='import {0:s}.links'.format(args.package_name))
     bootstrap.generate_notebook(notebook_dir=notebook_dir, notebook_name=args.notebook_name, macro_path=marco_path)
     bootstrap.generate_resources(python_dir, args.package_name)
-    bootstrap.generate_test(test_dir=test_dir, package_name=args.package_name)
+    bootstrap.generate_readme(root_dir=package_dir, package_name=args.package_name)
 
     # generate package configuration
     bootstrap.generate_setup(root_dir=package_dir, package_name=args.package_name)
-    bootstrap.generate_test(test_dir=test_dir, package_name=args.package_name)
+    bootstrap.generate_tests(test_dir=test_dir, package_name=args.package_name)
     bootstrap.generate_entry_points(python_dir=python_dir, package_name=args.package_name)

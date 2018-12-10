@@ -1,3 +1,18 @@
+"""Project: Eskapade - A python-based package for data analysis.
+
+Created: 2018/11/08
+
+Description:
+    Base classes used by tests of Eskapade macros and notebooks
+
+Authors:
+    KPMG Advanced Analytics & Big Data team, Amstelveen, The Netherlands
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted according to the terms listed in the file
+LICENSE.
+"""
+
 import os
 import shutil
 import unittest
@@ -5,7 +20,6 @@ import warnings
 
 from escore import ConfigObject
 from escore import process_manager
-from escore import resources
 from escore.core import execution, definitions, persistence
 from escore.logger import LogLevel
 
@@ -65,7 +79,7 @@ class NotebookTest(IntegrationTest):
             return
 
         settings = process_manager.service(ConfigObject)
-        settings['notebook'] = resources.notebook(notebook)
+        settings['notebook'] = notebook
         settings['testing'] = True
         settings['executed_notebook'] = None
         if analysis_name:
@@ -82,7 +96,7 @@ class NotebookTest(IntegrationTest):
             status = True
         except CellExecutionError:
             status = False
-            settings['executed_notebook'] = resources.notebook(notebook).replace('.ipynb','_executed.ipynb')
+            settings['executed_notebook'] = notebook.replace('.ipynb','_executed.ipynb')
             with open(settings['executed_notebook'], mode='wt') as f:
                 nbformat.write(nb, f)
 

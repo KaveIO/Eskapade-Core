@@ -59,13 +59,18 @@ def assert_structure(local_path, package_name, link_name, macro_name, notebook_n
                               '{0}/resources.py'.format(package_name),
                               '{0}/entry_points.py'.format(package_name),
                               'tests',
-                              'tests/test_{0}.py'.format(package_name),
+                              'tests/setup.py',
+                              'tests/{0}_python'.format(package_name),
+                              'tests/{0}_python/__init__.py'.format(package_name),
+                              'tests/{0}_python/test_{0}.py'.format(package_name),
+                              'tests/{0}_python/integration'.format(package_name),
+                              'tests/{0}_python/integration/__init__.py'.format(package_name),
+                              'tests/{0}_python/integration/test_macros.py'.format(package_name),
                               'data',
-                              'setup.py'
+                              'setup.py',
+                              'README.rst'
     ]
     package_paths = [package_dir.bestrelpath(path) for path in package_dir.visit()]
-
-    logger.error(str(package_paths))
     assert len(set(expected_package_paths).difference(set(package_paths))) == 0
 
 

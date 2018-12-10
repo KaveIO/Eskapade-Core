@@ -6,7 +6,7 @@ from escore import process_manager, resources, ConfigObject, DataStore, StatusCo
 from escore.core import execution
 from escore.core_ops import Break
 from escore.logger import LogLevel
-from escore_python.bases import TutorialMacrosTest
+from escore.bases import TutorialMacrosTest
 
 
 class CoreOpsTutorialMacrosTest(TutorialMacrosTest):
