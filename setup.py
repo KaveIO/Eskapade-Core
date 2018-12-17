@@ -22,7 +22,7 @@ NAME = 'Eskapade-Core'
 
 MAJOR = 0
 REVISION = 9
-PATCH = 3
+PATCH = 4
 DEV = False
 
 # NOTE: also update version at: README.rst
