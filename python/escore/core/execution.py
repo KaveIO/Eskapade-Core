@@ -43,13 +43,20 @@ def eskapade_configure(settings=None):
     - set matplotlib backend
     - process config file
 
-    :param ConfigObject settings: analysis settings
+    :param settings: analysis settings. Of type ConfigObject or string, where the string is the macro path.
     """
     # get config object from process manager
-    if settings:
+    if settings and isinstance(settings, ConfigObject):
         # use supplied settings as config service in process manager
         process_manager.remove_service(ConfigObject, silent=True)
         process_manager.service(settings)
+    elif settings and isinstance(settings, str):
+        # assume path to macro
+        macro_path = settings
+        settings = process_manager.service(ConfigObject)
+        settings['macro'] = macro_path
+    elif settings:
+        raise AssertionError('Provided \"settings\" not of type ConfigObject or string (macro path).')
     settings = process_manager.service(ConfigObject)
 
     # - initialize logging; any newly instanciated loggers are initialized to NOTSET,
