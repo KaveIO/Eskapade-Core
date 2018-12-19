@@ -109,7 +109,15 @@ class LogPublisher(logging.getLoggerClass()):
 
         :param handler: The log record handler.
         """
-        self.addHandler(handler)
+        # make sure we do not add duplicate handlers
+        handler_exists = False
+        if len(self.handlers) > 0:
+            for hdlr in self.handlers:
+                if isinstance(handler, type(hdlr)):
+                    handler_exists = True
+                    break
+        if not handler_exists:
+            self.addHandler(handler)
 
     def remove_handler(self, handler: logging.StreamHandler):
         """Remove a log record handler.
@@ -154,9 +162,6 @@ class LogPublisher(logging.getLoggerClass()):
 # Set LogPublisher to be the logger class.
 logging.setLoggerClass(LogPublisher)
 
-# The global application publisher. There should be only one.
-global_log_publisher = logging.getLogger('eskapade')
-
 
 # Handlers
 class ConsoleHandler(logging.StreamHandler):
@@ -179,6 +184,15 @@ class ConsoleErrHandler(logging.StreamHandler):
         """Initialize the ConsoleHandler object."""
         super().__init__(sys.stderr)
         self.setLevel(LogLevel.ERROR)
+
+
+# The global application publisher. There should be only one.
+global_log_publisher = logging.getLogger('eskapade')
+# initialize to info. can be overwritten later.
+global_log_publisher.log_level = LogLevel.INFO
+# publisher takes care that same handler is never added twice
+global_log_publisher.add_handler(ConsoleHandler())
+global_log_publisher.add_handler(ConsoleErrHandler())
 
 
 class Logger(object):
