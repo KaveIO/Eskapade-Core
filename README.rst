@@ -2,8 +2,8 @@
 Eskapade-Core
 =============
 
-* Version: 0.9.4
-* Released: Dec 2018
+* Version: 1.0.0
+* Released: Jan 2018
 
 Eskapade is a light-weight, python-based data analysis framework, meant for modularizing all sorts of data analysis problems
 into reusable analysis components. 
@@ -20,12 +20,27 @@ For the minimal documentation on Eskapade-Core, please go `here <http://eskapade
 Release notes
 =============
 
-Version 0.9.4
+Version 1.0.0
 -------------
 
-In Eskapade-Core v0.9.4 the eskapade_bootstrap method has been severely upgraded.
-Running this command will generate you a new (Eskapade) project directory with 
-a working link, macro, tests, entry-point scripts, and setup.py file!
+In Eskapade-Core v1.0.0:
+
+* Eskapade goes parallel. The execution of chains can be forked, so chains can run in parallel! See tutorial esk112 for details.
+
+* The eskapade_bootstrap method has been severely upgraded. Running this command will generate you a new (Eskapade) project directory with a working link, macro, tests, entry-point scripts, and setup.py file!
+
+* escore.eskapade_run() has been made more user-friendly for standalone use with python or jupyter.
+
+* added __main__ function to every newly generated macro, so macros can now be run standalone. In addition, eskapade_generate_macro now makes a python function in the macro.
+
+* The Eskapade DbConnection base class has been migraged to core.
+
+* The DataStore now has a fancy get() function that can assert the type, length, and presence of object.
+
+* Added a new link ``ApplyFunc`` that applies function to objects in the datastore. Simple but very useful.
+
+* Plus several small updates to existing links in core_ops: ``skip_chain_if_empty``, ``import_data_store``, ``BreakLink``. 
+
 
 Version 0.9
 -----------

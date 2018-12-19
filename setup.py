@@ -20,9 +20,9 @@ from setuptools import setup
 
 NAME = 'Eskapade-Core'
 
-MAJOR = 0
-REVISION = 9
-PATCH = 4
+MAJOR = 1
+REVISION = 0
+PATCH = 0
 DEV = False
 
 # NOTE: also update version at: README.rst
