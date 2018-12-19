@@ -307,6 +307,11 @@ link.logger.log_level = LogLevel.DEBUG
 ch.add(link)
 
 logger.debug('Done parsing configuration file {macro_name!s}.')
+
+
+if __name__ == "__main__":
+    import escore
+    escore.eskapade_run()
 """
 
     content = template.format(macro_name=macro_name,
