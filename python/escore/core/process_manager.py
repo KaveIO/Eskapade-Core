@@ -617,7 +617,7 @@ class ProcessManager(Processor, ProcessorSequence, TimerMixin):
 
         # Finalize
         if status == StatusCode.Success:
-            status = process_manager.finalize()
+            status = self.finalize()
             # Profiling output
             if profiler:
                 import io
