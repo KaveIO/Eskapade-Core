@@ -19,14 +19,17 @@ LICENSE.
 
 import glob
 import importlib
-import os
+import os, sys
+
+import multiprocessing
+from multiprocessing import Manager
 
 from escore.core import persistence
 from escore.core.definitions import StatusCode
 from escore.core.element import Chain
 from escore.core.meta import Processor, ProcessorSequence
 from escore.core.mixin import TimerMixin
-from escore.core.process_services import ConfigObject, ProcessService
+from escore.core.process_services import ConfigObject, ForkStore, ProcessService
 
 
 class ProcessManager(Processor, ProcessorSequence, TimerMixin):
@@ -72,6 +75,7 @@ class ProcessManager(Processor, ProcessorSequence, TimerMixin):
 
         self.prev_chain_name = ''
         self._services = {}
+        self.num_cpu = multiprocessing.cpu_count()
 
     def service(self, service_spec):
         """Get or register process service.
@@ -443,12 +447,16 @@ class ProcessManager(Processor, ProcessorSequence, TimerMixin):
             self.prev_chain_name = chain.name
             return status
 
-        # execute() of a chain can be called to be repeated.
-        # Note: by default this is not done. i.e. chains are only executed once
-        status = StatusCode.RepeatChain
-        while status.is_repeat_chain():
-            self.logger.debug('Executing chain={chain}', chain=chain.name)
-            status = chain.execute()
+        # execute
+        if chain.n_fork > 0: # fork
+            status = self.__fork(chain)
+        else: # default
+            # execute() of a chain can be called to be repeated.
+            # Note: by default this is not done. i.e. chains are only executed once
+            status = StatusCode.RepeatChain
+            while status.is_repeat_chain():
+                self.logger.debug('Executing chain={chain}', chain=chain.name)
+                status = chain.execute()
         if status.is_failure():
             return status
         elif status.is_break_chain():
@@ -468,6 +476,94 @@ class ProcessManager(Processor, ProcessorSequence, TimerMixin):
         # but retrieved from memory in the execution of next chain.
         self.prev_chain_name = chain.name
 
+        # ForkStore is a dict that holds objects that can be shared between different forks.
+        # convention: ForkStore is reset at end of each chain.
+        fs = self.service(ForkStore)
+        fs.clear()
+
+        return status
+
+    def __fork(self, chain) -> StatusCode:
+        """Fork and execute a chain
+
+        :return: status code of chain-ensemble of fork execution attempts
+        :rtype: StatusCode
+        """
+        self.logger.info("Process id before forking chain {0}: {1}".format(chain.name, os.getpid()))
+        self.logger.debug("Running maximum of {} processes concurrently.".format(self.num_cpu))
+
+        # store basic fork information
+        # settings['fork'] indicates we are currently forking
+        settings = self.service(ConfigObject)
+        settings['fork'] = True
+        fs = self.service(ForkStore)
+        fs['n_fork'] = chain.n_fork
+
+        # shared memory between fork processes,
+        # for keeping track of statuscode of each chain
+        status_list = Manager().list()
+        status = StatusCode.Success
+
+        # keep track of number of forked processes
+        child_pid_list = []
+        n_running = 0
+        fidx = 0
+
+        # start forks
+        while fidx < chain.n_fork:
+            # throttle number of processes running at the same time
+            if n_running < self.num_cpu:
+                try:
+                    # submit a new process
+                    pid = os.fork()
+                except OSError:
+                    sys.stderr.write("Could not create a child process\n")
+                    continue
+
+                if pid == 0:
+                    self.logger.info("In child process {}, chain={}, with PID {}".format(fidx, chain.name, os.getpid()))
+                    settings['fork_index'] = fidx
+                    # execute() of a chain can be called to be repeated.
+                    # Note: by default this is not done. i.e. chains are only executed once
+                    fstatus = StatusCode.RepeatChain
+                    while fstatus.is_repeat_chain():
+                        self.logger.debug('Executing chain={chain}', chain=chain.name)
+                        fstatus = chain.execute()
+                    # store exit status of each forked chain
+                    status_list.append(fstatus)
+                    # safe jupyter exit when forking
+                    os._exit(os.EX_OK)
+                else:
+                    self.logger.debug("In parent process after forking child {}".format(pid))
+                    child_pid_list.append(pid)
+                    n_running += 1
+                    fidx += 1
+            else:
+                self.logger.debug("Waiting for a child process to finish before forking again.")
+                finished = os.waitpid(0, 0)
+                if finished[0] in child_pid_list:
+                    self.logger.debug("Finished child process {} with status {}".format(finished[0], finished[1]))
+                    child_pid_list.remove(finished[0])
+                    n_running -= 1
+
+        self.logger.debug("Back in parent process after forking {} children".format(chain.n_fork))
+
+        # double-check all forks are finished
+        while child_pid_list:
+            self.logger.debug("Waiting for all child processes to finish.")
+            finished = os.waitpid(0, 0)
+            if finished[0] in child_pid_list:
+                self.logger.debug("Finished child process {} with status {}".format(finished[0], finished[1]))
+                child_pid_list.remove(finished[0])
+
+        self.logger.info('Finished forking chain {}'.format(chain.name))
+
+        # cleanup; no longer in fork
+        if 'fork' in settings:
+            del settings['fork']
+
+        if len(status_list)>0:
+            status = max(status_list)
         return status
 
     def execute(self):

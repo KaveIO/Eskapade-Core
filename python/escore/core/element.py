@@ -302,6 +302,7 @@ class Chain(Processor, ProcessorSequence, TimerMixin):
 
         self.prev_chain_name = ''  # type: str
         self.enabled = True  # type: bool
+        self.n_fork = 0
 
         # We register ourselves with the process manager.
         # If none is specified register with the default
@@ -331,7 +332,7 @@ class Chain(Processor, ProcessorSequence, TimerMixin):
                 break
             # A link may request to skip the rest of the execution of the chain (but do perform finalize).
             elif status == StatusCode.BreakChain:
-                self.logger.warning('Breaking of exection of chain "{chain!s} as requested by link "{link!s}"!',
+                self.logger.warning('Breaking off execution of chain "{chain!s} as requested by link "{link!s}"!',
                                     chain=self, link=_)
                 break
             # A link may request that the chain needs to be repeated during execution, e.g.
