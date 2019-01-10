@@ -286,28 +286,34 @@ modification, are permitted according to the terms listed in the file
 LICENSE.
 \"\"\"
 
-from escore import process_manager, Chain, ConfigObject, core_ops
-from escore.logger import Logger, LogLevel
-{import_line!s}
+def configure():
+    \"\"\" {macro_name!s}: set up links and chains
+    \"\"\"
+    from escore import process_manager, Chain, ConfigObject, core_ops
+    from escore.logger import Logger, LogLevel
+    {import_line!s}
 
-logger = Logger()
-logger.debug('Now parsing configuration file {macro_name!s}.')
+    logger = Logger()
+    logger.debug('Now parsing configuration file {macro_name!s}.')
 
-# --- minimal analysis information
+    # --- minimal analysis information
+    settings = process_manager.service(ConfigObject)
+    settings['analysisName'] = '{macro_name!s}'
+    settings['version'] = 0
 
-settings = process_manager.service(ConfigObject)
-settings['analysisName'] = '{macro_name!s}'
-settings['version'] = 0
+    # --- now set up the chains and links
+    ch = Chain('Start')
+    link = {link_module!s}.{link_name!s}()
+    link.logger.log_level = LogLevel.DEBUG
+    ch.add(link)
 
-# --- now set up the chains and links
+    logger.debug('Done parsing configuration file {macro_name!s}.')
 
-ch = Chain('Start')
-link = {link_module!s}.{link_name!s}()
-link.logger.log_level = LogLevel.DEBUG
-ch.add(link)
 
-logger.debug('Done parsing configuration file {macro_name!s}.')
-
+if __name__ in ["__main__", "escore.core.process_manager"]:
+    # --- set up the links and chains, executed by: python main(), or by
+    #     process_manager.execute_macro() when passing this config-file to eskapade_run script
+    configure()
 
 if __name__ == "__main__":
     import escore
