@@ -407,6 +407,37 @@ class DataStore(ProcessService, dict):
 
     _persist = True
 
+    def get(self, key: str, default: Any = None, assert_type: Any = None, assert_len: bool = False, assert_in: bool = False) -> object:
+        """Get value of setting. If it does not exists return the default value.
+
+        :param key: The key of object to get.
+        :param default: The default value of the key in case not found.
+        :param assert_type: if set, check object for given type or tuple of types. If fails, raise TypeError.
+        :param assert_len: if true, check that object has length greater than 0. If fails, raise TypeError or AssertionError.
+        :param assert_in: if true, assert that key is known.
+
+        :return: The value of the key or None if it does not exist.
+        """
+        try:
+            obj = self.__getitem__(key)
+        except Exception as e: #KeyError:
+            # key not found in datastore
+            if assert_in:
+                raise e
+            obj = default
+        if assert_type is not None:
+            if not isinstance(obj, assert_type):
+                raise TypeError('object with key {key} not of type(s): {types}'.format(key=key, types=assert_type))
+        if assert_len:
+            try:
+                obj_length = len(obj)
+                if obj_length == 0:
+                    raise AssertionError('object with key {key} has zero length'.format(key=key))
+            except Exception as e: #TypeError:
+                # object has no len() function
+                raise e
+        return obj
+
     def Print(self):
         """Print a summary the data store contents."""
         self.logger.info('Summary of data store ({n:d} objects)', n=len(self))
