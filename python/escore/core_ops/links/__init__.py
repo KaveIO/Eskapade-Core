@@ -15,6 +15,7 @@ from escore.core_ops.links.import_data_store import ImportDataStore
 from escore.core_ops.links.fork_example import ForkExample
 from escore.core_ops.links.fork_data_collector import ForkDataCollector
 from escore.core_ops.links.apply_func import ApplyFunc
+from escore.core_ops.links.skip_chain_if_present import SkipChainIfPresent
 
 __all__ = ['AssertInDs',
            'Break',
@@ -32,4 +33,5 @@ __all__ = ['AssertInDs',
            'ImportDataStore',
            'ForkExample',
            'ForkDataCollector',
-           'ApplyFunc']
+           'ApplyFunc',
+           'SkipChainIfPresent']
