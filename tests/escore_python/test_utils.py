@@ -5,25 +5,29 @@ import unittest.mock as mock
 from escore.utils import set_matplotlib_backend
 from escore.utils import check_interactive_backend
 
+try:
+    # Note, it's very useful to test this function,
+    # but if matplotlib is not installed there is nothing to do
+    import matplotlib
+    matplotlib_found = True
+except (ModuleNotFoundError, AttributeError):
+    # matplotlib library not found, so anyhow nothing to configure
+    matplotlib_found = False
+
 class MatplotlibBackendTest(unittest.TestCase):
     """Test for setting Matplotlib backend"""
 
     @mock.patch('escore.utils.logger')
     @mock.patch('escore.utils.get_env_var')
     @mock.patch.dict('sys.modules', clear=False)
-    @mock.patch('matplotlib.rcsetup')
-    @mock.patch('matplotlib.get_backend')
-    @mock.patch('matplotlib.interactive')
-    @mock.patch('matplotlib.use')
+    @mock.patch('matplotlib.rcsetup' if matplotlib_found else 'escore.utils.logger')
+    @mock.patch('matplotlib.get_backend' if matplotlib_found else 'escore.utils.logger')
+    @mock.patch('matplotlib.interactive' if matplotlib_found else 'escore.utils.logger')
+    @mock.patch('matplotlib.use' if matplotlib_found else 'escore.utils.logger')
     def test_set_matplotlib_backend(self, mock_use, mock_interactive, mock_get_backend, mock_rcsetup, mock_get_env_var,
                                     mock_log):
         """Test setting Matplotlib backend"""
-        try:
-            # Note, it's very useful to test this function,
-            # but if matplotlib is not installed there is nothing to do
-            import matplotlib
-        except (ModuleNotFoundError, AttributeError):
-            # matplotlib library not found, so anyhow nothing to configure
+        if not matplotlib_found:
             return
 
         # remove pyplot from mock modules
@@ -35,7 +39,7 @@ class MatplotlibBackendTest(unittest.TestCase):
 
         # set normal display variable
         mock_get_env_var.side_effect = lambda v: ':0.0' if v == 'display' else ''
-        from eskapade import process_manager, ConfigObject
+        from escore import process_manager, ConfigObject
         settings = process_manager.service(ConfigObject)
         settings['batchMode'] = not check_interactive_backend()
 

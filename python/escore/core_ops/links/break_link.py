@@ -31,15 +31,20 @@ class Break(Link):
         """Initialize link instance.
 
         :param str name: name of link
+        :param bool send_break: if true, send StatusCode.BreakChain (skip execution of rest of chain).
+                                Default is false, then sends StatusCode.Failure (exit program).
         """
         # initialize Link, pass name from kwargs
         Link.__init__(self, kwargs.pop('name', 'Break'))
+        self._process_kwargs(kwargs, send_break=False)
 
         # check residual kwargs. exit if any present
         self.check_extra_kwargs(kwargs)
 
     def execute(self):
         """Execute the link."""
+        if self.send_break:
+            return StatusCode.BreakChain
         # halt the execution of process_manager by sending a failure signal
         self.logger.info('Now sending break signal to halt execution!')
         return StatusCode.Failure

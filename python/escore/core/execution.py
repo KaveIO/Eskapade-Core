@@ -72,7 +72,7 @@ def eskapade_configure(settings=None):
         escore.utils.set_matplotlib_backend(batch=True, silent=False)
 
     # execute configuration macro, this sets up the order of the chains and links.
-    if 'macro' in settings:
+    if settings.get('macro'):
         process_manager.execute_macro(settings['macro'])
 
 

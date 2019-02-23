@@ -18,6 +18,10 @@ import pickle
 import re
 from collections import defaultdict
 from typing import Any
+import time
+
+import multiprocessing
+from multiprocessing import Manager
 
 import escore.utils
 from escore.core.definitions import CONFIG_DEFAULTS
@@ -298,7 +302,7 @@ class ConfigObject(ProcessService):
             if not sec_keys:
                 continue
             self.logger.info('  {config}:', config=sec)
-            max_key_len = max(len(k) for k in sec_keys)
+            max_key_len = max(len(str(k)) for k in sec_keys)
             for key in sec_keys:
                 self.logger.info('    {{key:<{:d}s}}  {{value!s}}'.format(max_key_len), key=key, value=self.get(key))
 
@@ -306,7 +310,7 @@ class ConfigObject(ProcessService):
         add_keys = sorted(set(self.__settings.keys()) - set(o for s in CONFIG_VARS.values() for o in s))
         if add_keys:
             self.logger.info('  custom:')
-            max_key_len = max(len(k) for k in add_keys)
+            max_key_len = max(len(str(k)) for k in add_keys)
             for key in add_keys:
                 self.logger.info('    {{0:<{:d}s}}  {{1!s}}'.format(max_key_len).format(key, self.get(key)))
 
@@ -403,16 +407,176 @@ class DataStore(ProcessService, dict):
 
     _persist = True
 
+    def get(self, key: str, default: Any = None, assert_type: Any = None, assert_len: bool = False, assert_in: bool = False) -> object:
+        """Get value of setting. If it does not exists return the default value.
+
+        :param key: The key of object to get.
+        :param default: The default value of the key in case not found.
+        :param assert_type: if set, check object for given type or tuple of types. If fails, raise TypeError.
+        :param assert_len: if true, check that object has length greater than 0. If fails, raise TypeError or AssertionError.
+        :param assert_in: if true, assert that key is known.
+
+        :return: The value of the key or None if it does not exist.
+        """
+        try:
+            obj = self.__getitem__(key)
+        except Exception as e: #KeyError:
+            # key not found in datastore
+            if assert_in:
+                raise e
+            obj = default
+        if assert_type is not None:
+            if not isinstance(obj, assert_type):
+                raise TypeError('object with key {key} not of type(s): {types}'.format(key=key, types=assert_type))
+        if assert_len:
+            try:
+                obj_length = len(obj)
+                if obj_length == 0:
+                    raise AssertionError('object with key {key} has zero length'.format(key=key))
+            except Exception as e: #TypeError:
+                # object has no len() function
+                raise e
+        return obj
+
     def Print(self):
         """Print a summary the data store contents."""
         self.logger.info('Summary of data store ({n:d} objects)', n=len(self))
         if not self:
             return
 
-        max_key_len = max(len(k) for k in self.keys())
+        max_key_len = max(len(str(k)) for k in self.keys())
         for key in sorted(self.keys()):
             self.logger.info('  {{0:<{:d}s}}  <{{1:s}}.{{2:s}} at {{3:x}}>'.
                              format(max_key_len).format(key,
                                                         type(self[key]).__module__,
                                                         type(self[key]).__name__,
                                                         id(self[key])))
+
+
+class ForkStore(ProcessService):
+    """Dict for sharing objects between forked processes.
+
+    The ForkStore is a dictionary meant for sharing data sets or any other objects
+    between forked processed.  During execute, links in the same chain can take one
+    or several data sets as input, transform them or use them as input for a model,
+    and store the output back again, to be picked up again by another forked process.
+    The ForkStore will not be persisted.
+
+    Example usage:
+
+    Obtain the global forkstore from any location as follows:
+
+    >>> from escore import process_manager, ForkStore
+    >>> fs = process_manager.service(ForkStore)
+
+    One can treat the datastore as any other dict:
+
+    >>> fs['a'] = 1
+    >>> fs['b'] = 2
+    >>> fs['0'] = 3
+    >>> a = fs['a']
+    """
+
+    _persist = False
+
+    def __init__(self):
+        """Initialize ForkStore instance."""
+        self.__manager = Manager()
+        self.__forkstore = self.__manager.dict()
+        self.lock = multiprocessing.Lock()
+        # NOTE: don't use lock = manager.Lock(), it's unstable!
+
+    def __repr__(self):
+        return repr(self.__forkstore)
+
+    def __getitem__(self, key: str) -> Any:
+        """Get value of key by name.
+
+        :param key: The key to get.
+        :return: The value of key.
+        :raise: UnknownSetting if it does not exist.
+        """
+        if key in self.__forkstore:
+            return self.__forkstore[key]
+        raise UnknownSetting('Unknown key {key}!'.format(key=key))
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        """Set the value of a key.
+
+        Note this overrides the current value a the key.
+
+        :param key:
+        :param value:
+        :return: None
+        """
+        self.__forkstore[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        """Delete key,value of key
+
+        :param key: the key of the key,value pair to delete.
+        :return: None
+        """
+        del self.__forkstore[key]
+
+    def __contains__(self, key):
+        """Check if a key is present.
+
+        :param key: The key to check for.
+        :return: True if key is present else False.
+        """
+        return key in self.__forkstore
+
+    def get(self, key: str, default: Any = None) -> object:
+        """Get value of key. If it does not exists return the default value.
+
+        :param key: The key to get.
+        :param default: The default value of the key.
+        :return: The value of the key or None if it does not exist.
+        """
+        try:
+            return self.__getitem__(key)
+        except UnknownSetting:
+            return default
+
+    def __copy__(self):
+        """Perform a shallow copy of self.
+
+        :return: copy
+        """
+        clone = ForkStore()
+        clone.__forkstore.update(self.__forkstore)
+        return clone
+
+    def copy(self):
+        """Perform a shallow copy of self.
+
+        :return: copy
+        """
+        return self.__copy__()
+
+    def clear(self):
+        """Clear fork store dictionary"""
+        self.__forkstore.clear()
+
+    def wait_until_unlocked(self):
+        """Wait until unlocked"""
+        while not self.lock.acquire(False):
+            time.sleep(0.01)
+        else:
+            # when actually unlocked, the call "not self.lock.acquire(False)" will cause lock,
+            # so release it first
+            self.lock.release()
+
+    def Print(self):
+        """Print a summary the shared fork objects."""
+        n=len(self.__forkstore)
+        self.logger.info('Summary of shared fork objects ({n:d})', n=n)
+
+        max_key_len = max(len(str(k)) for k in self.__forkstore.keys()) if n else 0
+        for key in sorted(self.__forkstore.keys()):
+            self.logger.info('  {{0:<{:d}s}}  <{{1:s}}.{{2:s}} at {{3:x}}>'.
+                             format(max_key_len).format(key,
+                                                        type(self.get(key)).__module__,
+                                                        type(self.get(key)).__name__,
+                                                        id(self.get(key))))

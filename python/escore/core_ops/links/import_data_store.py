@@ -31,6 +31,7 @@ class ImportDataStore(Link):
 
         :param str name: name of link
         :param str path: path of the datastore pickle file to import
+        :param bool update: if true update the existing datastore, don't replace it. Default is false.
         :param bool import_at_initialize: if false, perform datastore import at execute. Default is true, at initialize. 
         """
         # initialize Link, pass name from kwargs
@@ -38,7 +39,7 @@ class ImportDataStore(Link):
 
         # Process and register keyword arguments. If the arguments are not given, all arguments are popped from
         # kwargs and added as attributes of the link. Otherwise, only the provided arguments are processed.
-        self._process_kwargs(kwargs, path='', import_at_initialize=True)
+        self._process_kwargs(kwargs, path='', update=False, import_at_initialize=True)
 
         # check residual kwargs; exit if any present
         self.check_extra_kwargs(kwargs)
@@ -69,10 +70,15 @@ class ImportDataStore(Link):
         if not isinstance(ext_store, DataStore):
             self.logger.fatal('Object in file "{path}" not of type DataStore.', path=self.path)
             raise AssertionError('Input object not of type DataStore.')
-        # overwriting existing datastore
-        ds = process_manager.service(DataStore)
-        ds.clear()
-        ds.update(ext_store)
+
+        if self.update:
+            # update existing datastore
+            ds = process_manager.service(DataStore)
+            ds.update(ext_store)
+        else: # default
+            # replace existing datastore
+            process_manager.remove_service(DataStore)
+            process_manager.service(ext_store)
 
     def execute(self):
         """Execute the link.
