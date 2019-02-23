@@ -121,7 +121,7 @@ class {link_name!s}(Link):
 
         # Process and register keyword arguments. If the arguments are not given, all arguments are popped from
         # kwargs and added as attributes of the link. Otherwise, only the provided arguments are processed.
-        self._process_kwargs(kwargs, read_key=None, store_key=None)
+        self._process_kwargs(kwargs, read_key='', store_key='')
 
         # check residual kwargs; exit if any present
         self.check_extra_kwargs(kwargs)
@@ -134,6 +134,17 @@ class {link_name!s}(Link):
         :returns: status code of initialization
         :rtype: StatusCode
         \"\"\"
+        # check input arguments. both read_key and store_key need to be a string
+        self.check_arg_types(read_key=str, store_key=str)
+
+        # the attribute 'keys' (missing in this example) needs to be a list.
+        #self.check_arg_types(keys=list)
+        # the items of keys need to be strings. None is allowed as well.
+        #self.check_arg_types(recurse=True, allow_none=True, keys=str)
+
+        # both read_key and store_key need to be filled.
+        #self.check_arg_vals('read_key', 'store_key')
+
         return StatusCode.Success
 
     def execute(self):
@@ -147,6 +158,13 @@ class {link_name!s}(Link):
 
         # --- your algorithm code goes here
         self.logger.debug('Now executing link: {{link}}.', link=self.name)
+
+        # --- example where obj is retrieved from the datastore, with several requirements:
+        #     1) key is present in the datastore, 2) obj needs to have type list or tuple, 3) obj is required to have non-zero length.
+        #obj = ds.get(self.read_key, assert_in=True, assert_type=(list, tuple), assert_len=True)
+
+        # --- storage back into the datastore
+        #ds[self.store_key] = obj
 
         return StatusCode.Success
 
@@ -570,7 +588,7 @@ TEST_REQUIREMENTS = ['pytest>=3.5.0',
                      'pytest-pylint>=0.9.0',
                      ]
 REQUIREMENTS = [
-    'Eskapade-Core>=0.9.3'
+    'Eskapade-Core>=1.0.0'
     ]
 
 REQUIREMENTS = REQUIREMENTS + TEST_REQUIREMENTS
